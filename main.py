@@ -1,4 +1,3 @@
-token = "vk1.a.ZeQBe9qFIPZB39biyWLmQdpSsxZu_6L4yjH-3ujkCP2YdzQVGJwhy7pIkMASS88aS367dlkWfo-nDCTMsZwASMGGEj76t-AB51AH0XVJ41q87XFI-ntv08UNfvzU-MtQkFSpOHV3O7fwqgZIluWQQwi0xWohz5h_fG88YaCe-x9kKhrsoyEzRftDQJeHiVwBeZrNcLnmHdQR5691gPkHJQ"
 import vk_api.vk_api, json
 
 from vk_api.bot_longpoll import VkBotLongPoll
