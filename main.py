@@ -1,8 +1,16 @@
+<<<<<<< HEAD
 import os 
 import asyncio
 from vkbottle.bot import Bot, Message
 from time import sleep
 from card_creation import Create
+=======
+import vk_api.vk_api, json
+
+from vk_api.bot_longpoll import VkBotLongPoll
+from vk_api.bot_longpoll import VkBotEventType
+from vk_api.keyboard import VkKeyboard, VkKeyboardColor
+>>>>>>> 82e953186caffef7138f76ede79de068c9acffaf
 
 class vk:
      
@@ -42,6 +50,11 @@ class vk:
 
 
 if __name__ == "__main__":
+<<<<<<< HEAD
      # vk_metod = vk(os.getenv('vkinder'), 222142527)
      vk_metod = vk(os.getenv('vkinder')) 
      vk_metod.start_up()
+=======
+     vk_metod = vk(token, 222142527) 
+     vk_metod.send_message(422264572, "Некст")
+>>>>>>> 82e953186caffef7138f76ede79de068c9acffaf
