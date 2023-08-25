@@ -1,74 +1,47 @@
-token = "vk1.a.ZeQBe9qFIPZB39biyWLmQdpSsxZu_6L4yjH-3ujkCP2YdzQVGJwhy7pIkMASS88aS367dlkWfo-nDCTMsZwASMGGEj76t-AB51AH0XVJ41q87XFI-ntv08UNfvzU-MtQkFSpOHV3O7fwqgZIluWQQwi0xWohz5h_fG88YaCe-x9kKhrsoyEzRftDQJeHiVwBeZrNcLnmHdQR5691gPkHJQ"
-import vk_api.vk_api, json
-
-from vk_api.bot_longpoll import VkBotLongPoll
-from vk_api.bot_longpoll import VkBotEventType
-from vk_api.keyboard import VkKeyboard, VkKeyboardColor
+import os 
+import asyncio
+from vkbottle.bot import Bot, Message
+from time import sleep
+from card_creation import Create
 
 class vk:
      
-     def __init__(self, api_token, group_id):
-          self.token = api_token
-          self.group_id = group_id
-          self.vk = vk_api.VkApi(token=api_token)
-          self.long_poll = VkBotLongPoll(self.vk, group_id)
-          self.vk_api = self.vk.get_api()
-          pass
-     
+     def __init__(self, api_token):
+          self.bot = Bot(api_token)
+          self.create = Create()
 
-     def send_message(self, send_id, label):
-          # Настройки для обоих клавиатур
-          settings = dict(one_time=False, inline=True)
-          carousel = {
-                    "type": "carousel",
-                    "elements": [
-                         {    "photo_id": "422264572_457247007",
-                              "buttons": [
-                                   {
-                                   "action": {
-                                        "type": "open_link",
-                                        "link": "https://vk.com"
-                                   },
-                                   "color": "secondary",
-                                   "action": {"type": "text", "label": "Label"}
-                                   }
-                              ],
-                              "title": "Title",
-                              "description": "Description"
-                         },
-                         {    "photo_id": "422264572_457247007",
-                              "buttons": [
-                                   {
-                                   "action": {
-                                        "type": "open_link",
-                                        "link": "https://vk.com"
-                                   },
-                                   "color": "secondary",
-                                   "action": {"type": "text", "label": "Label"}
-                                   }
-                              ],
-                              "title": "Title",
-                              "description": "Description"
-                         },
-                         {    "photo_id": "422264572_457247007",
-                              "buttons": [
-                                   {
-                                   "action": {
-                                        "type": "open_link",
-                                        "link": "https://vk.com"
-                                   },
-                                   "color": "secondary",
-                                   "action": {"type": "text", "label": "Label"}
-                                   }
-                              ],
-                              "title": "Title",
-                              "description": "Description"
-                         },
 
-                    ]
-               }
-          self.vk_api.messages.send(peer_id=send_id, message="Привет", random_id = 24, template = json.dumps(carousel))
+
+          @self.bot.on.message(text="Начать")
+          async def start(message: Message):
+               user_info = await self.bot.api.users.get(message.from_id)
+               # keyboard = Keyboard(one_time=False, inline=False)
+               # keyboard.add(Text("Предыдуший"), color=KeyboardButtonColor.PRIMARY)
+               # keyboard.add(Text("Следующий"), color=KeyboardButtonColor.NEGATIVE)
+               # keyboard.row()
+               # keyboard.add(Text("❤"), color=KeyboardButtonColor.SECONDARY)
+               # keyboard.add(Text("🚫"), color=KeyboardButtonColor.SECONDARY)
+               # photo = 'photo405415109_457240825'
+               # await message.answer("Доброго времени суток, {}".format(user_info[0].first_name), keyboard=keyboard, attachment=photo)
+               await message.answer("Доброго времени суток, {}".format(user_info[0].first_name))
+               sleep(1)
+               keboard = self.create.keyboard(message.text)
+               sleep(1)
+               await message.answer("Начнём знакомства?", keyboard=keboard)
+               
+          @self.bot.on.message(text="Поехали!")
+          async def start(message: Message):
+               user_info = await self.bot.api.users.get(message.from_id)
+               card = self.create.card_assembly(message.text)
+               await message.answer("Привет, {}".format(user_info[0].first_name))
+          
+
+     def start_up(self):
+          self.bot.run_forever()
+
+
 
 if __name__ == "__main__":
-     vk_metod = vk(token, 222142527) 
-     vk_metod.send_message(422264572, "Некст")
+     # vk_metod = vk(os.getenv('vkinder'), 222142527)
+     vk_metod = vk(os.getenv('vkinder')) 
+     vk_metod.start_up()
