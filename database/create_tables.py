@@ -64,9 +64,10 @@ def create_tables():
 
 
 if __name__ == '__main__':
-    conn = psycopg2.connect(database='vkinder_db', user='postgres', password='314159')
-    drop_tables()
+    conn = psycopg2.connect(database='vkinder_db', user='postgres', password='a2887233')
+    # drop_tables()
     # drop_table('users')
+    create_type()
     create_tables()
 
     conn.close()
