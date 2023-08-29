@@ -7,10 +7,14 @@ class Create:
         self.secondary = KeyboardButtonColor.SECONDARY
 
     # Создание кнопок для карточки
-    def keyboard(self, indefication):
-        if indefication == "start":
+    async def keyboard(self, indefication):
+        if indefication in ["start", "Главное меню"]:
             keyboard = Keyboard(one_time = False, inline = False)
-            keyboard.add(Text("Начать знакомства"), color = self.secondary)
+            if indefication == "Главное меню":
+                # keyboard.add(Text("Продолжить знакомства"), color = self.secondary)
+                keyboard.add(Text("Начать знакомства"), color = self.secondary)
+            else:
+                keyboard.add(Text("Начать знакомства"), color = self.secondary)
             keyboard.row()
             keyboard.add(Text("Понравившиеся"), color = self.secondary)
             keyboard.add(Text("Чёрный список"), color = self.secondary)
@@ -23,11 +27,21 @@ class Create:
             keyboard.add(Text("Предыдущий"), color = self.secondary)
             keyboard.add(Text("Следущий"), color = self.secondary)
             keyboard.row()
-            keyboard.add(Text("Понравившиеся"), color = self.secondary)
-            keyboard.add(Text("Чёрный списко"), color = self.secondary)
+            keyboard.add(Text("❤"), color = self.secondary)
+            keyboard.add(Text("🚫"), color = self.secondary)
             keyboard.row()
             keyboard.add(Text("Главное меню"), color = self.secondary)
             return keyboard
+        
+        elif indefication == "Изменить данные":
+            keyboard = Keyboard(one_time = False, inline = False)
+            keyboard.add(Text("Город"), color = self.secondary)
+            keyboard.add(Text("Возраст"), color = self.secondary)
+            keyboard.add(Text("Пол"), color = self.secondary)
+            keyboard.row()
+            keyboard.add(Text("Главное меню"), color = self.secondary)
+            return keyboard
+
 
     # Создание фото для карточки
     def foto(self):
