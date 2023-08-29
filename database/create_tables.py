@@ -1,36 +1,33 @@
+import os
 import psycopg2
+from dotenv import load_dotenv
 
 # В терминале выполнить команду: createdb -U postgres vkinder_db
 
 
+load_dotenv()
+
+user = os.getenv('user')
+password = os.getenv('password')
+db = os.getenv('db')
+
+
 def drop_tables():
+    conn = psycopg2.connect(database=db, user=user, password=password)
     with conn.cursor() as cur:
         cur.execute('DROP TABLE photos, user_favorite, users, favorites;')
         conn.commit()
-
-
-def drop_table(table_name):
-    with conn.cursor() as cur:
-        cur.execute(f'DROP TABLE {table_name};')
-        # cur.execute('DROP TABLE %s;', (table_name,))
-        conn.commit()
-
-
-def create_type():
-    with conn.cursor() as cur:
-        cur.execute('''
-        CREATE TYPE SEX AS ENUM ('male', 'female', 'both');
-                ''')
-        conn.commit()
+    conn.close()
 
 
 def create_tables():
-    with conn.cursor() as cur:  # id SERIAL PRIMARY KEY
+    conn = psycopg2.connect(database=db, user=user, password=password)
+    with conn.cursor() as cur:
         cur.execute('''
         CREATE TABLE IF NOT EXISTS users(
             id INTEGER PRIMARY KEY,
             name VARCHAR(80) NOT NULL,
-            target_sex SEX,
+            target_sex BOOLEAN DEFAULT NULL,
             target_age_min INTEGER CHECK (target_age_min >= 18),
             target_age_max INTEGER CHECK (target_age_max >= target_age_min),
             target_city VARCHAR(80)
@@ -47,9 +44,9 @@ def create_tables():
         cur.execute('''
         CREATE TABLE IF NOT EXISTS photos(
             favorite_id INTEGER NOT NULL REFERENCES favorites(id),
-            photo_1 BYTEA,
-            photo_2 BYTEA,
-            photo_3 BYTEA
+            photo_1 INTEGER,
+            photo_2 INTEGER,
+            photo_3 INTEGER
         );
         ''')
         cur.execute('''
@@ -61,13 +58,9 @@ def create_tables():
         );
         ''')
         conn.commit()
+    conn.close()
 
 
 if __name__ == '__main__':
-    conn = psycopg2.connect(database='vkinder_db', user='postgres', password='a2887233')
-    # drop_tables()
-    # drop_table('users')
-    create_type()
+    drop_tables()
     create_tables()
-
-    conn.close()
