@@ -12,7 +12,7 @@ class action_bot:
     
     #Поиск людей по критериям
     async def start_search(self, message) -> dict:
-        user_info = get_user_info(message.from_id)
+        user_info = await get_user_info(message.from_id)
         matched = (await self.api.users.search(
                                         age_from = user_info['target_age_min'], 
                                         age_to = user_info['target_age_max'], 
@@ -55,7 +55,8 @@ class action_bot:
 
             return [photos, id_albums]
 
-    async def search_user_info(self, owner_id):
+    async def search_user_info(self, **params):
+        owner_id = params.get("owner_id")
         user_info = (await self.api.users.get(
                                         user_ids=owner_id,
                                         fields="home_town, sex, about"
@@ -67,11 +68,14 @@ class action_bot:
         home_town = user_info.home_town
         about = user_info.about
         sex = user_info.sex
+        link = f"https://vk.com/id{owner_id}"
+        if params.get("status") == "like":
+             return [owner_id ,first_name, last_name, link]
         if about != '':
-            user_info = f"{first_name} {last_name}\n Город:{home_town}\n О себе:{about}\n Пол:{sex}"
+            user_info = f"{first_name} {last_name}\n Город:{home_town}\n О себе:{about}\n Пол:{sex}\n Сылка на профиль: {link}"
             return user_info
         about = "*"
-        user_info = f"{first_name} {last_name}\n Город:{home_town}\n О себе:{about}\n Пол:{sex}"
+        user_info = f"{first_name} {last_name}\n Город:{home_town}\n О себе:{about}\n Пол:{sex}\n Сылка на профиль: {link}"
         return user_info
 
 

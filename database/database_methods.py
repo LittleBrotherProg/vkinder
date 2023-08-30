@@ -1,7 +1,7 @@
 import os
 import psycopg2
 from dotenv import load_dotenv
-from test_data import *
+# from test_data import *
 
 load_dotenv()
 
@@ -10,7 +10,7 @@ password = os.getenv('password')
 db = os.getenv('db')
 
 
-def add_user(id, name, target_sex, target_age_min, target_age_max, target_city):
+async def add_user(id, name, target_sex, target_age_min, target_age_max, target_city):
     conn = psycopg2.connect(database=db, user=user, password=password)
     with conn.cursor() as cur:
         cur.execute("""
@@ -25,7 +25,7 @@ def update_user_info():
     pass
 
 
-def add_favorite(id, name, surname, profile_link):
+async def add_favorite(id, name, surname, profile_link):
     conn = psycopg2.connect(database=db, user=user, password=password)
     with conn.cursor() as cur:
         cur.execute("""
@@ -36,7 +36,7 @@ def add_favorite(id, name, surname, profile_link):
     conn.close()
 
 
-def add_user_favorite(user_id, favorite_id, is_banned=False):
+async def add_user_favorite(user_id, favorite_id, is_banned=False):
     conn = psycopg2.connect(database=db, user=user, password=password)
     with conn.cursor() as cur:
         cur.execute("""
@@ -47,11 +47,11 @@ def add_user_favorite(user_id, favorite_id, is_banned=False):
     conn.close()
 
 
-def send_to_blacklist(user_id, favorite_id, is_banned=True):
+async def send_to_blacklist(user_id, favorite_id, is_banned=True):
     add_user_favorite(user_id, favorite_id, is_banned)
 
 
-def add_photos(favorite_id, photo_1, photo_2, photo_3):
+async def add_photos(favorite_id, photo_1, photo_2, photo_3):
     conn = psycopg2.connect(database=db, user=user, password=password)
     with conn.cursor() as cur:
         cur.execute("""
@@ -62,17 +62,17 @@ def add_photos(favorite_id, photo_1, photo_2, photo_3):
     conn.close()
 
 
-def add_test_data():
-    for user in users:
-        add_user(**user)
-    for favorite in favorites:
-        add_favorite(**favorite)
-    add_photos(**photos)
-    add_user_favorite(**user_favorite)
-    send_to_blacklist(**blacklist)
+# def add_test_data():
+#     for user in users:
+#         add_user(**user)
+#     for favorite in favorites:
+#         add_favorite(**favorite)
+#     add_photos(**photos)
+#     add_user_favorite(**user_favorite)
+#     send_to_blacklist(**blacklist)
 
 
-def get_user_info(user_id):
+async def get_user_info(user_id):
     conn = psycopg2.connect(database=db, user=user, password=password)
     with conn.cursor() as cur:
         cur.execute("""
@@ -82,10 +82,12 @@ def get_user_info(user_id):
         column_names = [col[0] for col in desc]
         data = [dict(zip(column_names, row)) for row in cur.fetchall()]
     conn.close()
+    if len(data) == 0:
+        return data
     return data[0]
 
 
-def get_favorite_info(favorite_id):
+async def get_favorite_info(favorite_id):
     conn = psycopg2.connect(database=db, user=user, password=password)
     with conn.cursor() as cur:
         cur.execute("""
@@ -98,7 +100,7 @@ def get_favorite_info(favorite_id):
     return data[0]
 
 
-def get_photos(favorite_id):
+async def get_photos(favorite_id):
     conn = psycopg2.connect(database=db, user=user, password=password)
     with conn.cursor() as cur:
         cur.execute("""
@@ -111,7 +113,7 @@ def get_photos(favorite_id):
     return data[0]
 
 
-def get_favorites_list(user_id):
+async def get_favorites_list(user_id):
     conn = psycopg2.connect(database=db, user=user, password=password)
     with conn.cursor() as cur:
         cur.execute("""
@@ -125,14 +127,14 @@ def get_favorites_list(user_id):
         column_names = [col[0] for col in desc]
         data = [dict(zip(column_names, row)) for row in cur.fetchall()]
     conn.close()
-    return data[0]
+    return data
 
 
-if __name__ == '__main__':
-    add_test_data()
-    print(get_user_info('48414363'))
-    print(get_favorite_info(55512124))
-    print(get_photos(55512124))
-    print(get_favorites_list(55512122))
-    print(get_user_info('48414363'))
-    print(get_favorite_info('55512124'))
+# if __name__ == '__main__':
+#     add_test_data()
+#     print(get_user_info('48414363'))
+#     print(get_favorite_info(55512124))
+#     print(get_photos(55512124))
+#     print(get_favorites_list(55512122))
+#     print(get_user_info('48414363'))
+#     print(get_favorite_info('55512124'))

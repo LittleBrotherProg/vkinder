@@ -22,14 +22,19 @@ class Create:
             keyboard.add(Text("Изменить данные"), color=self.secondary)
             return keyboard
         
-        elif indefication == "Начать знакомства":
+        elif indefication in ["Начать знакомства", "Понравившиеся"]:
             keyboard = Keyboard(one_time = False, inline = False)
-            keyboard.add(Text("Предыдущий"), color = self.secondary)
-            keyboard.add(Text("Следущий"), color = self.secondary)
-            keyboard.row()
-            keyboard.add(Text("❤"), color = self.secondary)
-            keyboard.add(Text("🚫"), color = self.secondary)
-            keyboard.row()
+            # keyboard.add(Text("Предыдущий"), color = self.secondary)
+            if indefication == "Понравившиеся":
+                keyboard.add(Text("Следущий", payload={"status":"favorites"}), color = self.secondary)
+                keyboard.add(Text("💔"), color = self.secondary)
+                keyboard.row()
+            else:
+                keyboard.add(Text("Следущий", payload = {"status":"base"}), color = self.secondary)
+                keyboard.row()
+                keyboard.add(Text("❤"), color = self.secondary)
+                keyboard.add(Text("🚫"), color = self.secondary)
+                keyboard.row()
             keyboard.add(Text("Главное меню"), color = self.secondary)
             return keyboard
         

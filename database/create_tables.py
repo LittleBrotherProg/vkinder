@@ -44,9 +44,9 @@ def create_tables():
         cur.execute('''
         CREATE TABLE IF NOT EXISTS photos(
             favorite_id INTEGER NOT NULL REFERENCES favorites(id),
-            photo_1 INTEGER,
-            photo_2 INTEGER,
-            photo_3 INTEGER
+            photo_1 VARCHAR(80),
+            photo_2 VARCHAR(80),
+            photo_3 VARCHAR(80)
         );
         ''')
         cur.execute('''
