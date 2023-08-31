@@ -112,26 +112,37 @@ users = [
      'target_age_min': 25, 'target_age_max': 32, 'target_city': 'Москва'},
     {'id': 55512122, 'name': 'Анатолий', 'target_sex': False,
      'target_age_min': 18, 'target_age_max': 24, 'target_city': 'Санкт-Петербург'},
-    # {'id': 55512123, 'name': 'Андрей', 'target_sex': False,
-    #  'target_age_min': 16, 'target_age_max': 18, 'target_city': 'Москва'},
-    # {'id': 55512124, 'name': 'Наталья'},
+    {'id': 55512123, 'name': 'Андрей', 'target_sex': False,
+     'target_age_min': 16, 'target_age_max': 18, 'target_city': 'Москва'},
+    {'id': 55512124, 'name': 'Наталья'},
     {'id': 55512125, 'name': 'Ипполит', 'target_sex': False,
      'target_age_min': 30, 'target_age_max': 35, 'target_city': 'Казань'}
 ]
 
 favorites = [
-    {'id': 55500111, 'name': 'Марья', 'surname': 'Болконская', 'profile_link': 'https://vk.com/id55500111'},
-    {'id': 55500112, 'name': 'Елена', 'surname': 'Курагина', 'profile_link': 'https://vk.com/id55500112'},
-    {'id': 55500113, 'name': 'Пётр', 'surname': 'Безухов', 'profile_link': 'https://vk.com/id55500113'},
-    {'id': 55512124, 'name': 'Наталья', 'surname': 'Ростова', 'profile_link': 'https://vk.com/id55512124'}
+    {'id': 55500111, 'name': 'Марья', 'surname': 'Болконская', 'profile_link': 'https://vk.com/id55500111',
+     'photos': {'photo_1': 111, 'photo_2': 222, 'photo_3': 333}},
+    {'id': 55500112, 'name': 'Елена', 'surname': 'Курагина', 'profile_link': 'https://vk.com/id55500112',
+     'photos': {'photo_1': 111}},
+    {'id': 55500113, 'name': 'Пётр', 'surname': 'Безухов', 'profile_link': 'https://vk.com/id55500113',
+     'photos': {'photo_1': 111, 'photo_2': 222, 'photo_3': 333}},
+    {'id': 55512124, 'name': 'Наталья', 'surname': 'Ростова', 'profile_link': 'https://vk.com/id55512124',
+     'photos': {'photo_1': 111, 'photo_3': 333}}
 ]
 
-photos = {'favorite_id': 55512124, 'photo_1': 111, 'photo_2': 222, 'photo_3': 333}
 user_favorite = {'user_id': 55512122, 'favorite_id': 55512124}
-blacklist = {'user_id': 55512122, 'favorite_id': 55500112}
 
 
-def add_record_user_table(id, name, target_sex, target_age_min, target_age_max, target_city):
+def add_record_user_table(id, name, target_sex=None, target_age_min=18, target_age_max=99, target_city=None):
+    """
+    # Создает запись в таблице users. Обязательно передать параметры id, name.
+    :param id: int
+    :param name: str
+    :param target_sex: bool (True - мужской, False - женский, None - не важно)
+    :param target_age_min: int (>=18)
+    :param target_age_max: int (>=target_age_min)
+    :param target_city: str
+    """
     conn = psycopg2.connect(database=db, user=user, password=password)
     with conn.cursor() as cur:
         try:
@@ -146,7 +157,7 @@ def add_record_user_table(id, name, target_sex, target_age_min, target_age_max, 
             conn.close()
 
 
-def update_user_info(id, name, target_sex, target_age_min, target_age_max, target_city):
+def update_user_info(id, name, target_sex=None, target_age_min=18, target_age_max=99, target_city=None):
     conn = psycopg2.connect(database=db, user=user, password=password)
     with conn.cursor() as cur:
         cur.execute("""UPDATE users SET name = %s WHERE id = %s""", (name, id))
@@ -188,7 +199,7 @@ def add_record_user_favorite_table(user_id, favorite_id, is_banned=False):
             conn.close()
 
 
-def add_record_photos_table(favorite_id, photo_1, photo_2, photo_3):
+def add_record_photos_table(favorite_id, photo_1=None, photo_2=None, photo_3=None):
     conn = psycopg2.connect(database=db, user=user, password=password)
     with conn.cursor() as cur:
         try:
@@ -225,12 +236,10 @@ def add_test_data():
     for user in users:
         add_record_user_table(**user)
     for favorite in favorites:
-        add_record_favorite_table(**favorite)
-    add_record_photos_table(**photos)
-    add_record_user_favorite_table(**user_favorite)
-    send_to_blacklist(**blacklist)
-    add_record_viewed_table(55512122, 55512124)
-    add_record_viewed_table(55512122, 55500112)
+        add_favorite(55512122, favorite)
+    send_to_blacklist(55512121, favorites[-1])
+    add_record_viewed_table(55512121, 55512124)
+    add_record_viewed_table(55512121, 55500112)
     update_user_info(**{'id': 55512121, 'name': 'Вера', 'target_sex': True,
      'target_age_min': 25, 'target_age_max': 32, 'target_city': 'Санкт-Петербург'})
 
@@ -291,22 +300,40 @@ def get_last_viewed(user_id):
 
 # Результирующие функции для кнопок действия
 
-def send_to_blacklist(user_id, favorite_id):
-    add_record_user_favorite_table(user_id, favorite_id, is_banned=True)
+def send_to_blacklist(user_id, viewed_data_dict):
+    """
+    Результирующая функция, добавляет новые строки в таблицы favorite, photos, user_favorite, user_viewed
+    :param user_id: int
+    :param viewed_data_dict: {'id': int, 'name': str, 'surname': str, 'profile_link': str,
+    photos: {photo_1: str, photo_2: str, photo_3: str}}
+    """
+    add_record_favorite_table(viewed_data_dict['id'], viewed_data_dict['name'], viewed_data_dict['surname'],
+                              viewed_data_dict['profile_link'])
+    add_record_photos_table(viewed_data_dict['id'], **viewed_data_dict['photos'])
+    add_record_user_favorite_table(user_id, viewed_data_dict['id'], is_banned=True)
+    add_record_viewed_table(user_id, viewed_data_dict['id'])
 
 
-# def add_favorite(user_data_dict, viewed_data_dict):
-#     add_record_user_favorite_table(user_data_dict['id'], viewed_data_dict['id'])
-#     add_record_photos_table(viewed_data_dict['id'], viewed_data_dict['photo_1'],
-#                             viewed_data_dict['photo_2'], viewed_data_dict['photo_3'])
-#     add_record_user_favorite_table(user_data_dict['id'], viewed_data_dict['id'])
+def add_favorite(user_id, viewed_data_dict):
+    """
+    Результирующая функция, добавляет новые строки в таблицы favorite, photos, user_favorite, user_viewed.
+    :param user_id: int
+    :param viewed_data_dict: {'id': int, 'name': str, 'surname': str, 'profile_link': str,
+    photos: {photo_1: str, photo_2: str, photo_3: str}}
+    """
+    add_record_favorite_table(viewed_data_dict['id'], viewed_data_dict['name'], viewed_data_dict['surname'],
+                              viewed_data_dict['profile_link'])
+    add_record_photos_table(viewed_data_dict['id'], **viewed_data_dict['photos'])
+    add_record_user_favorite_table(user_id, viewed_data_dict['id'])
+    add_record_viewed_table(user_id, viewed_data_dict['id'])
 
 
 def get_favorites_list(user_id):
     """
     :param user_id: int
     :return: list of dicts like this:
-    {'id': 55512124, 'name': 'Наталья', 'surname': 'Ростова', 'profile_link': 'https://vk.com/id55512124'}
+    [{'profile_link': 'https://vk.com/id55512124', 'name': 'Наталья', 'surname': 'Ростова',
+    'photo_1': '111', 'photo_2': None, 'photo_3': '333'}, ...]
     """
     conn = psycopg2.connect(database=db, user=user, password=password)
     with conn.cursor() as cur:
@@ -321,15 +348,15 @@ def get_favorites_list(user_id):
         column_names = [col[0] for col in desc]
         data = [dict(zip(column_names, row)) for row in cur.fetchall()]
     conn.close()
-    return data[0]
+    return data
 
 
 if __name__ == '__main__':
     add_test_data()
-    print(get_user_info('48414363'))
-    print(get_favorite_info(55512124))
-    print(get_photos(55512124))
-    print(get_favorites_list(55512122))
-    print(get_user_info('48414363'))
-    print(get_favorite_info('55512124'))
-    print(get_last_viewed(55512122))
+    print(1, get_user_info('48414363'))
+    print(2, get_favorite_info(55512124))
+    print(3, get_photos(55512124))
+    print(4, get_favorites_list(55512122))
+    print(5, get_user_info(55512124))
+    print(6, get_favorite_info('55512124'))
+    print(7, get_last_viewed(55512122))
