@@ -1,9 +1,6 @@
 import os
-from database.database_methods import *
-# from vkbottle.api import API
 from vkbottle import API
-from vkbottle.exception_factory.base_exceptions import VKAPIError 
-
+from database.get import *
 
 class action_bot:
 
@@ -12,14 +9,15 @@ class action_bot:
     
     #Поиск людей по критериям
     async def start_search(self, message) -> dict:
-        user_info = await get_user_info(message.from_id)
+        user_info = (await get_user_info(message.from_id))[0]
         matched = (await self.api.users.search(
                                         age_from = user_info['target_age_min'], 
                                         age_to = user_info['target_age_max'], 
                                         hometown = user_info['target_city'], 
                                         count = 1000
                                         )).items
-        id_matched = [info_user.id for info_user in matched if info_user.is_closed == False]
+        black_list = await get_black_list(message.peer_id)
+        id_matched = [info_user.id for info_user in matched if info_user.is_closed == False if info_user.id not in  black_list]
         return id_matched
     
     async def search_max_like_fotos(self, owner_id):
@@ -53,7 +51,7 @@ class action_bot:
             for id in range(len(key_max_like)-1, -1, -1):
                         photos.append(all_foto.get(key_max_like[id]))
 
-            return [photos, id_albums]
+            return photos
 
     async def search_user_info(self, **params):
         owner_id = params.get("owner_id")
@@ -67,17 +65,26 @@ class action_bot:
         last_name = user_info.last_name
         home_town = user_info.home_town
         about = user_info.about
-        sex = user_info.sex
+        # sex = user_info.sex
         link = f"https://vk.com/id{owner_id}"
-        if params.get("status") == "like":
+        if params.get("status") in ["like", "black"]:
              return [owner_id ,first_name, last_name, link]
         if about != '':
-            user_info = f"{first_name} {last_name}\n Город:{home_town}\n О себе:{about}\n Пол:{sex}\n Сылка на профиль: {link}"
+            user_info = f"{first_name} {last_name}\n Город:{home_town}\n О себе:{about}\n  Сылка на профиль: {link}"
             return user_info
         about = "*"
-        user_info = f"{first_name} {last_name}\n Город:{home_town}\n О себе:{about}\n Пол:{sex}\n Сылка на профиль: {link}"
+        user_info = f"{first_name} {last_name}\n Город:{home_town}\n О себе:{about}\n  Сылка на профиль: {link}"
         return user_info
-
+    
+    async def check_sity(self, city):
+        city_all = (await self.api.database.get_cities(country_id=1,
+                                             q=city
+                                             )).items
+        one = [city.title for city in city_all]
+        if city in one:
+            return city
+        similar_cities = [city.title for city in city_all if len(str(city.id)) <= 2]
+        return similar_cities
 
 # Класс действий с карточкой
 class action_card():

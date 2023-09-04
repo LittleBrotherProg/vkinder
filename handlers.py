@@ -1,7 +1,11 @@
-import os, vk_api
+import os
 from vkbottle.bot import Message, Bot
 from vkbottle import BaseStateGroup, CtxStorage
-from database.database_methods import *
+from database.add import *
+from database.button import *
+from database.delete import *
+from database.get import *
+from database.update import *
 from card_creation import Create
 from action import action_bot, action_card
 import ast
@@ -25,6 +29,25 @@ class handlers_start:
         self.create = Create()
         self.states = State
         self.ctx = CtxStorage()
+        self.status = {
+                        "favorites": [
+                                        get_favorites_viewed_id,
+                                        update_favorite_viewed,
+                                        get_favorite_info,
+                                        delete_favorites_last_viewed
+                                     ],
+                        "base": [
+                                    get_last_viewed,
+                                    update_viewed,
+                                    self.action_bot.search_user_info    
+                                ],
+                        "revome_favorites": [
+                                get_favorites_viewed_id,
+                                update_favorite_viewed,
+                                get_favorite_info,
+                                delete_favorites_last_viewed
+                                ]  
+                        }
 
         #Начало регестрации пользователя в приложении vkinder
         @self.bot.on.message(lev="Начать")
@@ -34,36 +57,70 @@ class handlers_start:
             user_info = await self.bot.api.users.get(message.from_id)
             first_name = user_info[0].first_name
             await message.answer("Доброго времени суток, {}".format(first_name))
-            self.ctx.set("name", first_name)
-            self.ctx.set("id", message.from_id)
-            await self.bot.state_dispenser.set(message.peer_id, self.states.CITY)
+            self.ctx.set(
+                        "name", 
+                        first_name
+                        )
+            self.ctx.set(
+                        "id", 
+                        message.from_id
+                        )
+            await self.bot.state_dispenser.set(
+                                                message.peer_id, 
+                                                self.states.CITY
+                                              )
             return "Укажите город в котором проживаете"
         
         @self.bot.on.message(state=self.states.CITY)
         async def city(message: Message):
-            if len(message.text.split()) != 1:
-                await self.bot.state_dispenser.set(message.peer_id, self.states.CITY)
-                return "Вы не верно ввели город"
+            sity = await self.action_bot.check_sity(message.text)
+            if  type(sity) == list:
+                await self.bot.state_dispenser.set(
+                                                    message.peer_id, 
+                                                    self.states.CITY
+                                                  )
+                await message.answer("Города который вы ввели не найден")
+                kb = await self.create.keyboard(
+                                        indefication = "sity",
+                                        sity = sity
+                                        )
+                await message.answer(
+                                      f"Вот что мы смогли найти похожее на {message.text}",
+                                      keyboard=kb
+                                    )
+                return "Напишите или выберите город"
             self.ctx.set("city", message.text)
-            await self.bot.state_dispenser.set(message.peer_id, self.states.SEX)
+            await self.bot.state_dispenser.set(
+                                                message.peer_id, 
+                                                self.states.SEX
+                                              )
             return "Укажите свой пол м/ж"
         
         # #Сохраняем пол который ввёл пользователь
         @self.bot.on.message(state=self.states.SEX)
         async def sex(message:Message):
-            if message.text not in ["м","ж"]:
-                await self.bot.state_dispenser.set(message.peer_id, self.states.SEX)
+            if message.text.lower() not in ["м","ж"]:
+                await self.bot.state_dispenser.set(
+                                                    message.peer_id, 
+                                                    self.states.SEX
+                                                  )
                 return "Вы не верно ввели пол"
             self.ctx.set("sex", message.text)
-            await self.bot.state_dispenser.set(message.peer_id, self.states.AGE)
+            await self.bot.state_dispenser.set(
+                                                message.peer_id, 
+                                                self.states.AGE
+                                              )
             return "Укажите свой возрост"
         
         # #Сохраняем возраст который ввёл пользователь и заносим данные в БД
         # #И выводим кнопки для дальнейшего пользования
         @self.bot.on.message(state = self.states.AGE)
         async def age(message:Message):
-            if message.text.isdigit() == False :
-                await self.bot.state_dispenser.set(message.peer_id, self.states.AGE)
+            if message.text.isdigit() == False or len(message.text) != 2 :
+                await self.bot.state_dispenser.set(
+                                                    message.peer_id, 
+                                                    self.states.AGE
+                                                  )
                 return "Вы не верно ввели возраст"
             self.ctx.set("age", message.text)
             name = self.ctx.get("name")
@@ -71,11 +128,25 @@ class handlers_start:
             _city = self.ctx.get("city")
             _sex = self.ctx.get("sex")
             id = self.ctx.get("id")
-            if _sex == "м":
-                await add_user(id, name, True, int(_age) - 3, int(_age) + 3, _city)
-            elif _sex == "ж":
-                await add_user(id, name, False, int(_age) - 3, int(_age) + 3, _city)
-            keyboard = await self.create.keyboard("start")
+            if _sex.lower() == "м":
+                await add_record_user_table(
+                                            id, 
+                                            name, 
+                                            True, 
+                                            int(_age) - 3, 
+                                            int(_age) + 3, 
+                                            _city
+                                            )
+            elif _sex.lower() == "ж":
+                await add_record_user_table(
+                                            id, 
+                                            name, 
+                                            False, 
+                                            int(_age) - 3, 
+                                            int(_age) + 3, 
+                                            _city
+                                            )
+            keyboard = await self.create.keyboard(indefication = "start")
             await self.bot.state_dispenser.delete(message.peer_id)
             await message.answer(
                                 f"Проверка данныx \n Имя: {name}\n Город:{_city}\n Пол:{_sex}\n Возраст:{_age}",
@@ -84,7 +155,7 @@ class handlers_start:
             
         @self.bot.on.message(text = "Главное меню")
         async def main_menu(message: Message):
-            keyboard = await self.create.keyboard(message.text)
+            keyboard = await self.create.keyboard(indefication = message.text)
             await message.answer(
                                 "Перешли в главное меню",
                                 keyboard=keyboard
@@ -92,148 +163,180 @@ class handlers_start:
         #Начинаем поиск людей по критериям
         @self.bot.on.message(text="Начать знакомства")
         async def start(message: Message):
+            await delete_user_last_viewed(message.peer_id)
             matched = await self.action_bot.start_search(message)
-            owner_id = matched.pop(0)
-            self.ctx.set("base_matched", matched)
-            previous = []
-            now = [owner_id]
-            self.ctx.set('base_now', now)
-            self.ctx.set('base_previous', previous)
+
+            await  add_record_viewed_table(message.peer_id, str(matched))
+            owner_id = (matched)[0]
             photos = await self.action_bot.search_max_like_fotos(owner_id)
-            self.ctx.set("photos", photos[0])
-            kb = await self.create.keyboard(message.text)
+            kb = await self.create.keyboard(
+                                            indefication = message.text,
+                                            button_status = "base"
+                                            )
             user_info = await self.action_bot.search_user_info(
                                                                 owner_id = owner_id,
                                                                 status = "search"
                                                                 )
-            await message.answer(attachment=photos[0])
             await message.answer(
                                 user_info, 
-                                keyboard=kb
+                                keyboard=kb,
+                                attachment=photos
                                 )
             
         @self.bot.on.message(text="Продолжить знакомства")
         async def go_on(message: Message):
             matched = self.ctx.get("matched")
+            get_last_viewed
             print(matched)
-            
-        @self.bot.on.message(text="Следущий")
+        
+        # Переключение на следущую карточку
+        @self.bot.on.message(text="Следующий")
         async def next_user(message: Message):
             status = ast.literal_eval(message.payload).get("status")
-            matched = self.ctx.get(f'{status}_matched')
-            now = (self.ctx.get(f'{status}_now'))
-            if len(matched) == 0:
-                await message.answer(f"{now[0].get('name')} {now[0].get('surname')} был последним в списке")
+            viewed = self.status.get(status)
+            users_list = ast.literal_eval(await viewed[0](message.peer_id))
+            if len(users_list) == 0 :
+                await message.answer(f"Это были все найденые по вашим критериям")
+                await viewed[3](message.peer_id)
                 return
-            now = (self.ctx.get(f'{status}_now'))
-            previous = (self.ctx.get(f'{status}_previous'))
-            old_owner_id = now.pop(0)
-            previous.append(old_owner_id)
-            self.ctx.set(f'{status}_previous', previous)
-            matched = self.ctx.get(f'{status}_matched')
-            owner_id = matched.pop(0)
-            now.append(owner_id)
-            self.ctx.set(f'{status}_now', now)
-            self.ctx.set(f'{status}_matched', matched)
-            if status == "favorites":
-                photos = [owner_id.get("photo_1"), owner_id.get("photo_2"), owner_id.get("photo_3")]
-                kb = await self.create.keyboard(message.text)
-                await message.answer(attachment=photos)
+            if len(users_list[1:]) == 1:
+                await viewed[1](message.peer_id, str(users_list[1:]))
+                kb = await self.create.keyboard(
+                                                indefication = message.text,
+                                                button_status = "last" 
+                                                )
+            else:    
+                await viewed[1](message.peer_id, str(users_list[1:]))
+                kb = await self.create.keyboard(
+                                                indefication = message.text,
+                                                button_status = "favorites" 
+                                                )
+            if status == "revome_favorites":
+                owner_id = users_list[0]
+            else:
+                owner_id = users_list[1:][0]
+            user = await viewed[2](
+                                    owner_id = owner_id,
+                                    status = "search"
+                                    )
+            if status in ["favorites", "revome_favorites"]:
+                photos = [
+                            user.get("photo_1"), 
+                            user.get("photo_2"), 
+                            user.get("photo_3")
+                         ]
                 await message.answer(
-                                    f"{owner_id.get('name')} {owner_id.get('surname')}\n {owner_id.get('profile_link')}", 
-                                    keyboard=kb
+                                    f"{user.get('name')} {user.get('surname')}\n {user.get('profile_link')}", 
+                                    keyboard=kb,
+                                    attachment=photos
                                     )
                 return
-            user_info = await self.action_bot.search_user_info(
-                                                                owner_id = owner_id,
-                                                                status = "search"
-                                                                )
-            photos = (await self.action_bot.search_max_like_fotos(owner_id))
-            self.ctx.set("photos", photos[0])
-            kb = await self.create.keyboard(message.text)
-            print(user_info, photos[1])
-            await message.answer(attachment=photos[0])
+            photos = (await self.action_bot.search_max_like_fotos(users_list[1:][0]))
             await message.answer(
-                                user_info, 
-                                keyboard=kb
+                                user,
+                                attachment=photos 
                                 )
-            
-        # @self.bot.on.message(text="Предыдущий")
-        # async def previous_user(message: Message):
-        #     now = self.ctx.get('now')
-        #     previous = self.ctx.get('previous')
-        #     matched = self.ctx.get('matched')
-        #     old_owner_id = now.pop(0)
-        #     matched.insert(0, old_owner_id)
-        #     owner_id = previous.pop(-1)
-        #     now.append(owner_id)
-        #     self.ctx.set('now', now)
-        #     self.ctx.set('matched', matched)
-        #     self.ctx.set('previous',previous)
-        #     user_info = await self.action_bot.search_user_info(owner_id)
-        #     photos = await self.action_bot.search_max_like_fotos(owner_id)
-        #     self.bot.state_dispenser.set("photos", photos)
-        #     kb = await self.create.keyboard(message.text)
-        #     await message.answer(attachment=photos[0])
-        #     await message.answer(
-        #                         user_info, 
-        #                         keyboard=kb
-        #                         )
-        
+             
         # Добавление в понравившиеся
         @self.bot.on.message(text="❤")
         async def like_users(message: Message):
-            now =  self.ctx.get('base_now')
-            favorite_id = now[0]
-            photos = self.ctx.get('photos')
+            favorite_id =  ast.literal_eval(await get_last_viewed(message.peer_id))[0]
             user_info = await self.action_bot.search_user_info(
                                                         owner_id = favorite_id,
                                                         status = "like"
                                                          )
-            await add_favorite(user_info[0], user_info[1], user_info[2], user_info[3])
-            await add_user_favorite(message.peer_id, favorite_id)
-            await add_photos(favorite_id, photos[0], photos[1], photos[2])
-            await message.answer(f"{user_info[1]} {user_info[2]} успешно добавлен в понравившееся")
+            if await get_favorite_info(owner_id = favorite_id) != []:
+                await message.answer(f"{user_info[1]} {user_info[2]} уже в вашем списке понравившихся")
+                return
+            photos = (await self.action_bot.search_max_like_fotos(favorite_id))
+            photos_favorites = {}
+            for index, photo in enumerate(photos):
+                photos_favorites[f"photo_{index+1}"] = photo
+            await add_favorite(
+                        message.peer_id, 
+                        id = user_info[0], 
+                        name = user_info[1], 
+                        surname = user_info[2],
+                        profile_link = user_info[3],
+                        photos = photos_favorites
+                        )
+            await message.answer(f"{user_info[1]} {user_info[2]} успешно добавлен в ваш списко понравившихся")
+
+        @self.bot.on.message(text = "💔")
+        async def delete_favorite(message: Message):
+            await message.answer("Кнопка не работает")
+        #     favorites_id = ast.literal_eval(await get_favorites_viewed_id(message.peer_id))
+        #     if len(favorites_id) == 1:
+        #         keyboard = await self.create.keyboard(
+        #                                             indefication = message.text,
+        #                                             button_status = "remove_like_last"
+        #                                         )
+        #         await message.answer(
+        #                             f"{favorite['name']} {favorite['surname']} был(а) удалён(а) из списка понравившихся",
+        #                             keyboard = keyboard
+        #                         )
+        #         await message.answer(f"Это были все найденые по вашим критериям")
+        #         await delete_favorites_last_viewed(message.peer_id)
+        #         return
+        #     favorite_id = favorites_id[0]
+        #     await update_favorite_viewed(message.peer_id, str(favorites_id[1:]))
+        #     favorite = await get_favorite_info(owner_id = favorite_id)
+        #     await delete_favorite_(message.peer_id, favorite_id)
+        #     keyboard = await self.create.keyboard(
+        #                                             indefication = message.text,
+        #                                             button_status = "remove_like"
+        #                                         )
+        #     await message.answer(
+        #                             f"{favorite['name']} {favorite['surname']} был(а) удалён(а) из списка понравившихся",
+        #                             keyboard = keyboard
+        #                         )
+
 
         @self.bot.on.message(text="🚫")
         async def black_list_users(message:Message):
-            await message.answer(
-                                "Кнопка не работает"
-                                )
-            # now =  self.ctx.get('now')
-            # favorite_id = now.pop(0)
-            # await send_to_blacklist(message.peer_id, favorite_id, True)
-            # await message.answer("Пользователь добавлен в чёрный список")
-            # matched = self.ctx.get('matched')
-            # owner_id = matched.pop(0)
-            # now.append(owner_id)
-            # self.ctx.set('matched', matched)
-            # self.ctx.set('now', now)
-            # user_info = await self.action_bot.search_user_info(owner_id)
-            # photos = await self.action_bot.search_max_like_fotos(owner_id)
-            # kb = self.create.keyboard(message.text)
-            # await message.answer(attachment=photos[0])
-            # await message.answer(
-            #                     user_info, 
-            #                     keyboard=kb
-            #                     )
+            favorite_id =  ast.literal_eval(await get_last_viewed(message.peer_id))[0]
+            user_info = await self.action_bot.search_user_info(
+                                                                owner_id = favorite_id,
+                                                                status = "black"
+                                                              )
+            photos = (await self.action_bot.search_max_like_fotos(favorite_id))
+            photos_favorites = {}
+            for index, photo in enumerate(photos):
+                photos_favorites[f"photo_{index+1}"] = photo
+            await send_to_blacklist(
+                                    message.peer_id, 
+                                    id = user_info[0], 
+                                    name = user_info[1], 
+                                    surname = user_info[2],
+                                    profile_link = user_info[3],
+                                    photos = photos_favorites
+                                    )
+            await message.answer(f"{user_info[1]} {user_info[2]} успешно добавлен в чёрный список")
             
         @self.bot.on.message(text="Понравившиеся")
         async def like_users(message: Message):
-            favorites_list = await get_favorites_list(message.peer_id)
+            await delete_favorites_last_viewed(message.peer_id)
+            favorites_list = await get_all_favorites(message.peer_id)
+            if len(favorites_list) == 0:
+                await message.answer(f"Вы перешли к понравившимся людям\n Всего понравившихся {len(favorites_list)}")
+                return    
+            await add_record_favorite_viewed_table(message.peer_id, str(favorites_list))
             await message.answer(f"Вы перешли к понравившимся людям\n Всего понравившихся {len(favorites_list)}")
-            user_info = favorites_list.pop(0)
-            self.ctx.set("favorites_matched", favorites_list)
-            favorites_previous = []
-            favorites_now = [user_info]
-            self.ctx.set('favorites_now', favorites_now)
-            self.ctx.set('favorites_previous', favorites_previous)
-            photos = [user_info.get("photo_1"), user_info.get("photo_2"), user_info.get("photo_3")]
-            kb = await self.create.keyboard(message.text)
-            await message.answer(attachment=photos)
+            favorite_id = favorites_list.pop(0)
+            favorite = await get_favorite_info(owner_id = favorite_id)
+            photos = [
+                        favorite.get("photo_1"), 
+                        favorite.get("photo_2"), 
+                        favorite.get("photo_3")
+                     ]
+            kb = await self.create.keyboard(
+                                            indefication = message.text,
+                                            button_status = ''
+                                            )
             await message.answer(
-                                f"{user_info.get('name'), user_info.get('surname')}\n {user_info.get('profile_link')}", 
-                                keyboard=kb
+                                f"{favorite.get('name')} {favorite.get('surname')}\n {favorite.get('profile_link')}", 
+                                keyboard=kb,
+                                attachment=photos
                                 )
 
         @self.bot.on.message(text="Чёрный список")
@@ -242,14 +345,14 @@ class handlers_start:
             
         @self.bot.on.message(text = "Изменить данные")
         async def change_data(message: Message):
-            keyboard = await self.create.keyboard(message.text)
+            keyboard = await self.create.keyboard(indefication = message.text)
             await message.answer('Какие данные хотите изменить?', keyboard=keyboard)
 
         @self.bot.on.message(lev = "Город")
         async def city_edit_state(message: Message):
             await message.answer("Кнопка не работает")
             # await self.bot.state_dispenser.set(message.peer_id, self.states.CITY_EDIT)
-
+            # update_user_info(id, name, target_sex=None, target_age_min=18, target_age_max=99, target_city=None)
         
         @self.bot.on.message(state=self.states.CITY_EDIT)
         async def city_edit(message: Message):

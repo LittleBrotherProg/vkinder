@@ -11,5 +11,5 @@ class vk:
 
 
 if __name__ == "__main__":
-     vk_metod = vk() 
+     vk_metod = vk()  
      vk_metod.start_up()
