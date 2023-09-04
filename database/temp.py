@@ -11,7 +11,7 @@ password = os.getenv('password')
 db = os.getenv('db')
 
 
-# class SukaBlyad:
+# class aaa:
 #
 #     load_dotenv()
 #
@@ -34,7 +34,7 @@ db = os.getenv('db')
 
 # def connect(func):
 #     def new_func(*args, **kwargs):
-#         conn = psycopg2.connect(database='vkinder_db', user='postgres', password='314159')
+#         conn = psycopg2.connect(database='vkinder_db', user='postgres', password='...')
 #         result = func(*args, **kwargs)
 #         conn.close()
 #         return result
