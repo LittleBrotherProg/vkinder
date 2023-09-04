@@ -15,11 +15,12 @@ db = os.getenv('db')
 def drop_tables():
     conn = psycopg2.connect(database=db, user=user, password=password)
     with conn.cursor() as cur:
-        cur.execute('DROP TABLE photos, user_favorite, user_viewed, users, favorites;')
+        cur.execute('DROP TABLE photos, user_favorite, user_viewed,  users, favorites, favorites_viewed ;')
         conn.commit()
     conn.close()
 
 
+# create_tables
 def create_tables():
     conn = psycopg2.connect(database=db, user=user, password=password)
     with conn.cursor() as cur:
@@ -60,10 +61,15 @@ def create_tables():
         conn.commit()
         cur.execute('''
         CREATE TABLE IF NOT EXISTS user_viewed(
-            user_id INTEGER NOT NULL REFERENCES users(id),
-            viewed_id INTEGER NOT NULL,
-            PRIMARY KEY (user_id, viewed_id)
+            user_id INTEGER NOT NULL REFERENCES users(id) PRIMARY KEY,
+            viewed_id TEXT
         );
+        ''')
+        conn.commit()
+        cur.execute('''
+        CREATE TABLE IF NOT EXISTS favorites_viewed(
+            user_id INTEGER NOT NULL REFERENCES users(id) PRIMARY KEY,
+            viewed_id TEXT    );
         ''')
         conn.commit()
     conn.close()
