@@ -1,4 +1,4 @@
-from vkbottle import  Keyboard, KeyboardButtonColor, Text, PhotoMessageUploader
+from vkbottle import  Keyboard, KeyboardButtonColor, Text
 
 # Класс для создания карточки
 class Create:
@@ -119,5 +119,8 @@ class Create:
                             color = self.secondary
                         )
             keyboard.row()
-            keyboard.add(Text("Главное меню"), color = self.secondary)
+            keyboard.add(
+                            Text("Главное меню"), 
+                            color = self.secondary
+                        )
             return keyboard

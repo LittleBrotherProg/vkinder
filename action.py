@@ -59,8 +59,8 @@ class action_bot:
                                         user_ids=owner_id,
                                         fields="home_town, sex, about"
                                         ))[0]
-        if user_info.is_closed == True:
-             return 'private'
+        # if user_info.is_closed == True:
+        #      return 'private'
         first_name = user_info.first_name
         last_name = user_info.last_name
         home_town = user_info.home_town

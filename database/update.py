@@ -30,6 +30,9 @@ async def update_favorite_viewed(user_id, viewed):
                                 password=password
                             )
     with conn.cursor() as cur:
-        cur.execute("""UPDATE favorites_viewed SET viewed_id = %s WHERE user_id = %s""", (viewed, user_id))
+        cur.execute(
+                    """UPDATE favorites_viewed SET viewed_id = %s WHERE user_id = %s""", 
+                    (viewed, user_id)
+                    )
         conn.commit()
     conn.close()

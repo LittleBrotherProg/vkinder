@@ -128,11 +128,13 @@ class handlers_start:
             _city = self.ctx.get("city")
             _sex = self.ctx.get("sex")
             id = self.ctx.get("id")
+            # 
             if _sex.lower() == "м":
                 await add_record_user_table(
                                             id, 
                                             name, 
                                             True, 
+                                            # 
                                             int(_age) - 3, 
                                             int(_age) + 3, 
                                             _city
@@ -165,9 +167,8 @@ class handlers_start:
         async def start(message: Message):
             await delete_user_last_viewed(message.peer_id)
             matched = await self.action_bot.start_search(message)
-
             await  add_record_viewed_table(message.peer_id, str(matched))
-            owner_id = (matched)[0]
+            owner_id = matched[0]
             photos = await self.action_bot.search_max_like_fotos(owner_id)
             kb = await self.create.keyboard(
                                             indefication = message.text,
@@ -199,7 +200,7 @@ class handlers_start:
                 await message.answer(f"Это были все найденые по вашим критериям")
                 await viewed[3](message.peer_id)
                 return
-            if len(users_list[1:]) == 1:
+            elif len(users_list[1:]) == 1:
                 await viewed[1](message.peer_id, str(users_list[1:]))
                 kb = await self.create.keyboard(
                                                 indefication = message.text,

@@ -11,6 +11,7 @@
   <p>In the terminal, run the command: createdb -U postgres vkinder_db</p>
   <p>And the last point you need to go to vkinder/database/ and start the file create_tables.py to create tables in the database</p>
   <p>In the .env file, specify your data for connecting to the database</p>
+  <p>Environment variables are used in the program. In the file handlers.py, line 28. Here instead of os.getenv('vkinder') you should insert the group token. And also in the file action.py instead of os.getenv('USERVK') you need to insert the token from your page.</p>
   <li>Bot fields
     <ol type="1">
       <li>main.py</li>
