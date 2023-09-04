@@ -3,12 +3,12 @@ import psycopg2
 from psycopg2 import Error
 from dotenv import load_dotenv
 
-
 load_dotenv()
 
 user = os.getenv('user')
 password = os.getenv('password')
 db = os.getenv('db')
+
 
 async def add_record_favorite_table(id, name, surname, profile_link):
     conn = psycopg2.connect(database=db, user=user, password=password)
@@ -69,6 +69,7 @@ async def add_record_viewed_table(user_id, viewed_id):
         finally:
             conn.close()
 
+
 async def add_record_favorite_viewed_table(user_id, viewed_id):
     conn = psycopg2.connect(database=db, user=user, password=password)
     with conn.cursor() as cur:
@@ -83,9 +84,10 @@ async def add_record_favorite_viewed_table(user_id, viewed_id):
         finally:
             conn.close()
 
+
 async def add_record_user_table(id, name, target_sex=None, target_age_min=18, target_age_max=99, target_city=None):
     """
-    # Создает запись в таблице users. Обязательно передать параметры id, name.
+    Создает запись в таблице users. Обязательно передать параметры id, name.
     :param id: int
     :param name: str
     :param target_sex: bool (True - мужской, False - женский, None - не важно)

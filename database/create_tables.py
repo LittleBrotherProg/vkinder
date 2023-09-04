@@ -69,7 +69,11 @@ def create_tables():
         cur.execute('''
         CREATE TABLE IF NOT EXISTS favorites_viewed(
             user_id INTEGER NOT NULL REFERENCES users(id) PRIMARY KEY,
+<<<<<<< HEAD
             viewed_id TEXT[]   
+=======
+            viewed_id TEXT
+>>>>>>> d79d5f500a18ebb589fe861e41a6f9625242540b
         );
         ''')
         conn.commit()
